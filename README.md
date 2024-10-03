@@ -9,6 +9,10 @@
 poetry run gunicorn --config setting.py
 ```
 
+If you run this program first time, you need to run `poetry install` first.
+
+To clone this repository without permitted account, add **deploy key**.
+
 ### API list
 
 API URL: [https://shikosai.mtaisei.com/api](https://shikosai.mtaisei.com/api)
