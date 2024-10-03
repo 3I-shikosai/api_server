@@ -1,5 +1,14 @@
 # API server for online-chip system
 
+### Running
+
+* Host: `0.0.0.0`
+* Port: `8080`
+
+```bash
+poetry run gunicorn --config setting.py
+```
+
 ### API list
 
 API URL: [https://shikosai.mtaisei.com/api](https://shikosai.mtaisei.com/api)
