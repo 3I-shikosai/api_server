@@ -2,7 +2,7 @@
 
 ### API list
 
-API URL: [](https://shikosai.mtaisei.com/api)
+API URL: [https://shikosai.mtaisei.com/api](https://shikosai.mtaisei.com/api)
 
 | Path | Request Method | Function |
 | --- | --- | --- |
