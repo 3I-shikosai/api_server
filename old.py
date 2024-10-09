@@ -1,9 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from enum import Enum
 from starlette.middleware.cors import CORSMiddleware
-
-import threading
 
 
 # ------- CONSTANTS --------
@@ -47,6 +45,10 @@ class UpdateData(BaseModel):
 
 # ------- User Class (holds user's status) -------
 class Users():
+    __user_id: int = None
+    __balance: int = None
+    __session_id: int = None
+    __status: Status = None
 
     def __init__(self, user_id):
         self.__user_id = user_id
@@ -54,22 +56,18 @@ class Users():
         self.__status = Status.available
         self.__session_id = 5
 
-    @property
     def user_id(self):
         return self.__user_id
 
     def login(self):
         self.__status = Status.in_use
 
-    @property
-    def get_session_id(self):
+    def session_id(self):
         return self.__session_id
 
-    @property
     def status(self):
         return self.__status
 
-    @property
     def balance(self):
         return self.__balance
 
@@ -82,94 +80,84 @@ class Users():
         self.__status = Status.available
 
     def response(self):
-        return ResponseData(
-                user_id=self.__user_id,
-                session_id=self.__session_id,
-                balance=self.__balance,
-                status=self.__status
-        )
+        ret = ResponseData()
+        ret.user_id = self.__user_id
+        ret.session_id = self.__session_id
+        ret.balance = self.__balance
+        ret.status = self.__status
+        return ret
 
 
 # ---- INIT USERS ----
 global_users = [Users(i) for i in range(0, MAX_USERS)]
 
 
-lock = threading.Lock()
+def get_users():
+    global global_users
+    return global_users
 # --------------------
 
 
 # ----------- Return user's balance ------------
 @app.get("/api/balance/{user_id}")
-async def status(user_id: int):
-    global global_users
+async def status(user_id: int, users: Users = Depends(get_users)):
     print("\n\n---------- balance request")
-    print((global_users[user_id]).balance)
-    return {"balance": (global_users[user_id]).balance}
+    print((users[user_id]).balance())
+    return {"balance": (users[user_id]).balance()}
 
 
 # ----------- Increament user's balance -------
 @app.put("/api/inc")
-async def inc(data: UpdateData):
+async def inc(data: UpdateData, users: Users = Depends(get_users)):
 
-    global global_users
     # Increase of Decrease user's balance
     if data.password == PASSWORD:
-        with lock:
-            global_users[data.user_id].inc(data.diff)
-        print("\n\n ----------------- inc call ------------------")
-        print("diff", data.diff)
+        users[data.user_id].inc(data.diff)
 
-    return global_users[data.user_id].response()
+    return users[data.user_id].response()
 
 
 # ----------- Reset user's data for next customer -------
 @app.put("/api/reset")
-async def reset(data: UpdateData):
-    global global_users
+async def reset(data: UpdateData, users: Users = Depends(get_users)):
+
     # Reset user's data
     if data.password == PASSWORD:
-        with lock:
-            global_users[data.user_id].reset()
-        print("\n [reset] notice\n",
-              global_users[data.user_id].response(), "\n")
+        users[data.user_id].reset()
+        print("\n [reset] notice\n", users[data.user_id].response(), "\n")
 
-        return global_users[data.user_id].response()
+        return users[data.user_id].response()
     else:
         print("\n [reset] error -> password incorrect!!!\n")
 
 
 # ----------- Return Session ID & change status to in-use -----------
 @app.get("/api/user/login/{user_id}")
-async def login(user_id: int):
-    global global_users
-    if global_users[user_id].status == Status.in_use:
+async def login(user_id: int, users: Users = Depends(get_users)):
+    if users[user_id].status() == Status.in_use:
 
         print("\n[login] error -> status = in_use")
 
         raise HTTPException(status_code=400, detail="このIDは現在使用中です")
 
     else:
-        with lock:
-            global_users[user_id].login()
+        users[user_id].login()
 
-        print("\n[login] notice -> login successed",
-              global_users[user_id].response())
+        print("\n[login] notice -> login successed", users[user_id].response())
         print("\n")
 
-        return global_users[user_id].response()
+        return users[user_id].response()
 
 
 # ----------- Check if the user's data is correct ----------
 @app.post("/api/user/sync")
-async def sync_data(data: ResponseData):
-    global global_users
-    print("\n[sync] error -> session_id incorrect\n")
-    print("server: ", global_users[data.user_id].response())
-    print("\nclient: ", data)
-    print("\n")
+async def sync_data(data: ResponseData, users: Users = Depends(get_users)):
+    if data.session_id != users[data.user_id].session_id():
 
-    if data.session_id != global_users[data.user_id].get_session_id:
+        print("\n[sync] error -> session_id incorrect\n")
+        print("server: ", users[data.user_id].response())
+        print("\nclient: ", data)
+        print("\n")
 
         raise HTTPException(status_code=400, detail="セッションIDが期限切れです")
-
-    return global_users[data.user_id].response()
+    return users[data.user_id].response()
