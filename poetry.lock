@@ -349,4 +349,4 @@ uvicorn = ">=0.14.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "10492a3bdd4951415d3adb86e63a4f30aebd34b0db3c9b73e725f64ec23b3365"
+content-hash = "8f5ab3fefbf4de42a22e481ec62e3ea171ebe7fab7ed49d7d2fc5e1d3268a3e7"

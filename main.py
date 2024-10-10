@@ -5,6 +5,34 @@ from starlette.middleware.cors import CORSMiddleware
 
 import threading
 
+# for Debug coloring
+from colorama import Fore, Style
+
+
+# ------- for Debug -------
+def note(str: str):
+    print(Fore.YELLOW)
+    print(f'\n------ [[ {str} ]] ---------------------------')
+    print(Style.RESET_ALL)
+
+
+def note_():
+    print(Fore.YELLOW)
+    print("\n---")
+    print(Style.RESET_ALL)
+
+
+def warn(str: str):
+    print(Fore.RED)
+    print(f'\n------ [[ {str} ]] ---------------------------')
+    print(Style.RESET_ALL)
+
+
+def warn_():
+    print(Fore.RED)
+    print("\n---")
+    print(Style.RESET_ALL)
+
 
 # ------- CONSTANTS --------
 MAX_USERS = 10
@@ -102,8 +130,11 @@ lock = threading.Lock()
 @app.get("/api/balance/{user_id}")
 async def status(user_id: int):
     global global_users
-    print("\n\n---------- balance request")
-    print((global_users[user_id]).balance)
+
+    note("Balance")
+    print("User(server):", global_users[user_id].response())
+    note_()
+
     return {"balance": (global_users[user_id]).balance}
 
 
@@ -112,12 +143,27 @@ async def status(user_id: int):
 async def inc(data: UpdateData):
 
     global global_users
-    # Increase of Decrease user's balance
+
+    note("Inc Call")
+    print("UpdateData(client):", data)
+    print("User(server):", global_users[data.user_id].response())
+    note_()
+
     if data.password == PASSWORD:
         with lock:
             global_users[data.user_id].inc(data.diff)
-        print("\n\n ----------------- inc call ------------------")
-        print("diff", data.diff)
+
+    else:
+
+        warn("Increase")
+        print("管理者パスワードが間違っています")
+        warn_()
+
+        raise HTTPException(status_code=400, detail="管理者パスワードが間違っています")
+
+    note("Inc Fin!")
+    print("User:", global_users[data.user_id].response())
+    note_()
 
     return global_users[data.user_id].response()
 
@@ -126,25 +172,45 @@ async def inc(data: UpdateData):
 @app.put("/api/reset")
 async def reset(data: UpdateData):
     global global_users
-    # Reset user's data
+
+    note("Reset Call")
+    print("UpdateData(client):", data)
+    print("User(server):", global_users[data.user_id].response())
+    note_()
+    note_()
+
     if data.password == PASSWORD:
         with lock:
             global_users[data.user_id].reset()
-        print("\n [reset] notice\n",
-              global_users[data.user_id].response(), "\n")
 
-        return global_users[data.user_id].response()
     else:
-        print("\n [reset] error -> password incorrect!!!\n")
+        warn("Increase")
+        print("管理者パスワードが間違っています")
+        warn_()
+
+        raise HTTPException(status_code=400, detail="管理者パスワードが間違っています")
+
+    note("Reset Fin!")
+    print("User:", global_users[data.user_id].response())
+    note_()
+
+    return global_users[data.user_id].response()
 
 
 # ----------- Return Session ID & change status to in-use -----------
 @app.get("/api/user/login/{user_id}")
 async def login(user_id: int):
     global global_users
+
+    note("Login Call")
+    print("user_id:", user_id)
+    note_()
+
     if global_users[user_id].status == Status.in_use:
 
-        print("\n[login] error -> status = in_use")
+        warn("Login")
+        print("ID使用中 status==Status.in_use")
+        warn_()
 
         raise HTTPException(status_code=400, detail="このIDは現在使用中です")
 
@@ -152,24 +218,33 @@ async def login(user_id: int):
         with lock:
             global_users[user_id].login()
 
-        print("\n[login] notice -> login successed",
-              global_users[user_id].response())
-        print("\n")
+    note("Login Fin!")
+    print("User:", global_users[user_id].response())
+    note_()
 
-        return global_users[user_id].response()
+    return global_users[user_id].response()
 
 
 # ----------- Check if the user's data is correct ----------
 @app.post("/api/user/sync")
 async def sync_data(data: ResponseData):
     global global_users
-    print("\n[sync] error -> session_id incorrect\n")
-    print("server: ", global_users[data.user_id].response())
-    print("\nclient: ", data)
-    print("\n")
+    
+    note("SYNC Call")
+    print("ResponseData(client):", data)
+    print("User(server):", global_users[data.user_id].response())
+    note_()
 
     if data.session_id != global_users[data.user_id].get_session_id:
 
+        warn("SYNC")
+        print("セッションID期限切れ")
+        warn_()
+
         raise HTTPException(status_code=400, detail="セッションIDが期限切れです")
+
+    note("SYNC Fin!")
+    print("User:", global_users[data.user_id].response())
+    note_()
 
     return global_users[data.user_id].response()
