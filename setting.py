@@ -1,13 +1,13 @@
-wsgi_app = 'main:app'
+wsgi_app = "app.main:app"
 
-ch_dir = './'
+ch_dir = "./"
 
-bind = '0.0.0.0:8080'
+bind = "0.0.0.0:8080"
 
 workers = 4
 
-worker_class = 'uvicorn_worker.UvicornWorker'
+worker_class = "uvicorn_worker.UvicornWorker"
 
 # accesslog = './access.log'
-accesslog = '-'
-loglevel = 'info'
+accesslog = "-"
+loglevel = "info"

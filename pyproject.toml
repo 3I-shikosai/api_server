@@ -5,6 +5,15 @@ description = "API server for online-chip system"
 authors = ["st22182ti <st22182ti@gm.ibaraki-ct.ac.jp>"]
 readme = "README.md"
 
+packages = [
+    { include = "app" },
+]
+
+
+[tool.black]
+line-length = 79
+
+
 [tool.poetry.dependencies]
 python = "^3.10"
 fastapi = "^0.115.0"
@@ -12,6 +21,8 @@ uvicorn = "^0.31.0"
 uvicorn-worker = "^0.2.0"
 gunicorn = "^23.0.0"
 colorama = "^0.4.6"
+black = "^24.10.0"
+sqlalchemy = "^2.0.35"
 
 
 [build-system]
