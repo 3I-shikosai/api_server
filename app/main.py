@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm import Session
 from random import randint
 
@@ -21,8 +22,12 @@ app.add_middleware(
 )
 
 
-# ------- create DB table ----------
-database.Base.metadata.create_all(bind=database.engine)
+def create_tables():
+    inspector = Inspector.from_engine(database.engine)
+    if "users" not in inspector.get_table_names():
+        database.Base.metadata.create_all(bind=database.engine)
+    else:
+        print("[DB table create] table 'user' already exists.")
 
 
 # ------- create users on DB ----------
@@ -37,10 +42,13 @@ def create_users(db: Session):
             )
             db.add(new_user)
         db.commit()
+    else:
+        print("[DB record create] records already exists.")
 
 
 @app.on_event("startup")
 def startup_event():
+    create_tables()
     db = database.SessionLocal()
     create_users(db)
     db.close()

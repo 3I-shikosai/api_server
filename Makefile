@@ -1,17 +1,15 @@
-.PHONY: format run uvicorn setup
+.PHONY: format test run build
 format:
 	poetry run black ./
 
 
-run:
-	rm userdata.db
+test:
 	poetry run gunicorn --config ./setting.py
 
 
-uvicorn:
-	rm userdata.db
-	poetry run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+run:
+	podman run -p 8080:8080 fastapi
 
 
-setup:
-	poetry install
+build:
+	podman build -t fastapi . --no-cache=true
